@@ -3,7 +3,7 @@ import numpy as np
 
 # Initialize global variables
 clicked_points = []
-dimensions = (6, 9)  # Example for a 8x8 chessboard
+dimensions = (8, 11)  # Example for a 8x8 chessboard
 
 
 def mouse_callback(event, x, y,  flags, param):
