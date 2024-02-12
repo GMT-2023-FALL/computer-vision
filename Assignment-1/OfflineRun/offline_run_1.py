@@ -3,7 +3,7 @@ import glob
 import cv2
 import numpy as np
 
-from manual_process.utils import manually_find_corner_points, save_params
+from manually_process.utils import manually_find_corner_points, save_params
 
 
 def offlineRun1(_config):
