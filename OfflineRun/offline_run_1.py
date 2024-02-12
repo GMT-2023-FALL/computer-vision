@@ -1,4 +1,5 @@
 import glob
+import os
 
 import cv2
 import numpy as np
@@ -18,7 +19,12 @@ def offlineRun1(_config):
 
     images = glob.glob(_config['images_folder_path'])
     for index, file_name in enumerate(images):
-        file_name_index = file_name.split('\\')[-1]
+        # if os env is macos, then use the following code to get the file name
+        # detect the os env
+        if os.name == 'nt':
+            file_name_index = file_name.split('\\')[-1]
+        else:
+            file_name_index = file_name.split('/')[-1]
         print("Processing: ", file_name_index)
         img = cv2.imread(file_name)
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
