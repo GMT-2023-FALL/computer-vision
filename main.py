@@ -5,7 +5,7 @@ from OfflineRun.offline_run_1 import offlineRun1
 WIDTH = 9
 HEIGHT = 6
 criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
-IMAGES_FOLDER_PATH = 'images/unprocessed-images/*.jpg'
+IMAGES_FOLDER_PATH = 'images/samples/*.jpg'
 AUTO_DETECTED_IMAGES_FOLDER_PATH = 'images/result/auto'
 HUMAN_DETECTED_IMAGES_FOLDER_PATH = 'images/result/manual'
 image_size = (1280, 720)

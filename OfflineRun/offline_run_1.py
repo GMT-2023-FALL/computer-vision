@@ -3,15 +3,7 @@ import glob
 import cv2
 import numpy as np
 
-from custom_process.utils import custom_process
-
-
-def save_params(_parameter_file_path, _object_points_list, _image_points_list, _gray):
-    ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(_object_points_list, _image_points_list, _gray.shape[::-1], None, None)
-    np.save('{}/mtx.npy'.format(_parameter_file_path), mtx)
-    np.save('{}/dist.npy'.format(_parameter_file_path), dist)
-    np.save('{}/rvecs.npy'.format(_parameter_file_path), rvecs)
-    np.save('{}/tvecs.npy'.format(_parameter_file_path), tvecs)
+from manual_process.utils import manually_find_corner_points, save_params
 
 
 def offlineRun1(_config):
@@ -32,7 +24,6 @@ def offlineRun1(_config):
         ret, corners = cv2.findChessboardCorners(gray, pattern_size, None)
 
         if ret:
-            pass
             # Finding sub-pixel corners based on the original corners
             corners2 = cv2.cornerSubPix(gray, corners, (11, 11), (-1, -1), _config['criteria'])
             object_points_list.append(object_points)
@@ -40,10 +31,10 @@ def offlineRun1(_config):
             # Draw and save the corners
             cv2.drawChessboardCorners(img, pattern_size, corners2, ret)
             cv2.imwrite("{}/result_{}".format(auto_detected_images_folder_path, file_name_index), img)
-            print("Auto Detected: {}", file_name_index)
+            print("Auto Detected: {}".format(file_name_index))
         else:
-            print("No corners found in image: ", file_name_index)
-            image_points_list.append(custom_process(file_name, _config))
+            # print("No corners found in image: ", file_name_index)
+            image_points_list.append(manually_find_corner_points(file_name, _config))
             object_points_list.append(object_points)
         cv2.destroyAllWindows()
     save_params(parameter_file_path, object_points_list, image_points_list, _config['image_size'])

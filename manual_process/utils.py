@@ -4,7 +4,6 @@ import numpy as np
 # Initialize global variables
 clicked_points = []
 image_points = None
-
 original_image = None
 
 
@@ -82,10 +81,11 @@ def resize_image_to_screen(_image, _screen_width, _screen_height, buffer=50):
     return img
 
 
-def custom_process(img_path, config):
+def manually_find_corner_points(img_path, config):
+    file_name = img_path.split('\\')[-1]
+    print("manually finding corners points for: ", file_name)
     global original_image
     clear()
-    print("Custom process for image: ", img_path.split('\\')[-1])
 
     # 获取屏幕分辨率
     screen_width, screen_height = get_screen_resolution()
@@ -102,14 +102,20 @@ def custom_process(img_path, config):
     cv2.setMouseCallback('Chessboard', mouse_callback, {
         "image": resized_image,
         "config": config,
-        'file_name': img_path.split('\\')[-1]
     })
 
     # Display the _image
     cv2.imshow('Chessboard', resized_image)
     cv2.waitKey(0)
-    cv2.imwrite("{}/result_{}".format(config["human_detected_images_folder_path"], img_path.split('\\')[-1]),
+    cv2.imwrite("{}/result_{}".format(config["human_detected_images_folder_path"], file_name),
                 resized_image)
     cv2.destroyAllWindows()
-    print("Custom process finished for image: ", img_path)
     return image_points
+
+
+def save_params(_parameter_file_path, _object_points_list, _image_points_list, _dimension):
+    ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(_object_points_list, _image_points_list, _dimension, None, None)
+    np.save('{}/mtx.npy'.format(_parameter_file_path), mtx)
+    np.save('{}/dist.npy'.format(_parameter_file_path), dist)
+    np.save('{}/rvecs.npy'.format(_parameter_file_path), rvecs)
+    np.save('{}/tvecs.npy'.format(_parameter_file_path), tvecs)
