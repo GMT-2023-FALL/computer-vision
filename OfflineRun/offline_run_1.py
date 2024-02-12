@@ -19,6 +19,7 @@ def offlineRun1(_config):
     images = glob.glob(_config['images_folder_path'])
     for index, file_name in enumerate(images):
         file_name_index = file_name.split('\\')[-1]
+        print("Processing: ", file_name_index)
         img = cv2.imread(file_name)
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         ret, corners = cv2.findChessboardCorners(gray, pattern_size, None)
@@ -37,4 +38,4 @@ def offlineRun1(_config):
             image_points_list.append(manually_find_corner_points(file_name, _config))
             object_points_list.append(object_points)
         cv2.destroyAllWindows()
-    save_params(parameter_file_path, object_points_list, image_points_list, _config['image_size'])
+    # save_params(parameter_file_path, object_points_list, image_points_list, _config['image_size'])
