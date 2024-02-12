@@ -1,3 +1,5 @@
+import os
+
 import cv2
 import numpy as np
 
@@ -82,7 +84,10 @@ def resize_image_to_screen(_image, _screen_width, _screen_height, buffer=50):
 
 
 def manually_find_corner_points(img_path, config):
-    file_name = img_path.split('\\')[-1]
+    if os.name == 'nt':
+        file_name = img_path.split('\\')[-1]
+    else:
+        file_name = img_path.split('/')[-1]
     print("manually finding corners points for: ", file_name)
     global original_image
     clear()
