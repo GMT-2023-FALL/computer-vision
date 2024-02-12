@@ -38,4 +38,5 @@ def offlineRun1(_config):
             image_points_list.append(manually_find_corner_points(file_name, _config))
             object_points_list.append(object_points)
         cv2.destroyAllWindows()
-    # save_params(parameter_file_path, object_points_list, image_points_list, _config['image_size'])
+    if len(object_points_list) > 0 and len(image_points_list) > 0:
+        save_params(parameter_file_path, object_points_list, image_points_list, _config['image_size'])
