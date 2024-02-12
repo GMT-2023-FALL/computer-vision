@@ -160,3 +160,4 @@ cython_debug/
 .idea/
 images/result/auto/
 images/result/manual/
+parameters/offline-run-1/
