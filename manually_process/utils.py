@@ -118,6 +118,7 @@ def manually_find_corner_points(img_path, config):
 
 
 def save_params(_parameter_file_path, _object_points_list, _image_points_list, _dimension):
+    # TODO: quality filter
     ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(_object_points_list, _image_points_list, _dimension, None, None)
     np.save('{}/mtx.npy'.format(_parameter_file_path), mtx)
     np.save('{}/dist.npy'.format(_parameter_file_path), dist)
@@ -136,6 +137,7 @@ def get_image_points(file_name, _config):
     else:
         file_name_index = file_name.split('/')[-1]
     img = cv2.imread(file_name)
+    # TODO enhance the image quality input
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     ret, corners = cv2.findChessboardCorners(gray, pattern_size, None)
 
@@ -282,7 +284,7 @@ def get_webcam_snapshot(step, _config, width=1280, height=720):
             break
         # draw the chessboard
         draw_chessboard(frame, objp, step, _config)
-        cv2.imshow('Frame', frame)
+        cv2.imshow('Webcam Capture for Online Run {}'.format(1), frame)
         # 按下'q'键退出循环
         if cv2.waitKey(1) & 0xFF == ord(' '):
             captured_frame = frame
