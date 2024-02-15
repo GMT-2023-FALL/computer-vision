@@ -28,7 +28,8 @@ def offlineRun(task, _config):
     object_points_list = []
     image_points_list = []
     parameter_file_path = 'parameters/offline-run-{}'.format(task)
-    print("Offline Run {} Start".format(task))
+    print("\n"
+          "Offline Run {} Start".format(task))
     if task == 1:
         images_list = glob.glob(_config['images_folder_path'] + _config['image_format'])
     elif task == 2:

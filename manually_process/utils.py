@@ -49,7 +49,8 @@ def interpolate_chessboard_corners(corners, param):
     sub_work_coord = np.array(sub_work_coord, np.float32)
     res = cv2.perspectiveTransform(sub_work_coord.reshape(-1, 1, 2), M)
     # show the chessboard grid
-    gray = cv2.cvtColor(_image, cv2.COLOR_BGR2GRAY)
+    enhanced_img = reduce_light_reflections(_image)
+    gray = cv2.cvtColor(enhanced_img, cv2.COLOR_BGR2GRAY)
     corners = np.array(res, np.float32)
     image_points = cv2.cornerSubPix(gray, corners, (11, 11), (-1, -1), criteria)
 
@@ -118,12 +119,87 @@ def manually_find_corner_points(img_path, config):
 
 
 def save_params(_parameter_file_path, _object_points_list, _image_points_list, _dimension):
-    # TODO: quality filter
-    ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(_object_points_list, _image_points_list, _dimension, None, None)
+    # Filter out bad images
+    filtered_object_points, filtered_image_points, ret, mtx, dist, rvecs, tvecs = filter_bad_images(
+        _object_points_list, _image_points_list, _dimension
+    )
+    # Save the parameters to a file
     np.save('{}/mtx.npy'.format(_parameter_file_path), mtx)
     np.save('{}/dist.npy'.format(_parameter_file_path), dist)
     np.save('{}/rvecs.npy'.format(_parameter_file_path), rvecs)
     np.save('{}/tvecs.npy'.format(_parameter_file_path), tvecs)
+
+
+def filter_bad_images(_object_points_list, _image_points_list, _dimension, max_reprojection_error=0.25):
+    """
+    Iteratively calibrates the camera using the provided object and image points,
+    removing the image points with the highest reprojection error until all remaining
+    images have a reprojection error below the specified threshold.
+
+    Parameters:
+    - _object_points_list: List of object points
+    - _image_points_list: List of image points corresponding to object points
+    - _dimension: Dimension (width, height) of the images
+    - max_reprojection_error: Maximum allowed reprojection error
+
+    Returns:
+    - object_points_filtered: Filtered list of object points
+    - image_points_filtered: Filtered list of image points
+    - ret: The overall RMS re-projection error
+    - mtx: Camera matrix
+    - dist: Distortion coefficients
+    - rvecs: Rotation vectors
+    - tvecs: Translation vectors
+    """
+    # Ensure the lists are numpy arrays for easier indexing
+    object_points_array = np.array(_object_points_list)
+    image_points_array = np.array(_image_points_list)
+    count = 0
+    while True:
+        # Calibrate the camera using the current sets of points
+        ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(object_points_array, image_points_array, _dimension, None, None)
+
+        # Calculate the reprojection errors for each image
+        max_error = 0
+        max_error_index = -1
+        for i in range(len(object_points_array)):
+            imgpoints2, _ = cv2.projectPoints(object_points_array[i], rvecs[i], tvecs[i], mtx, dist)
+            error = cv2.norm(image_points_array[i], imgpoints2, cv2.NORM_L2)/len(imgpoints2)
+            # print("Reprojection error for image {}: {}".format(i, error))
+            if error > max_error:
+                max_error = error
+                max_error_index = i
+
+        # If the max error is below the threshold or we have one image left, break
+        if max_error < max_reprojection_error or len(object_points_array) == 1:
+            break
+
+        # Remove the point set with the highest error
+        object_points_array = np.delete(object_points_array, max_error_index, axis=0)
+        image_points_array = np.delete(image_points_array, max_error_index, axis=0)
+        count += 1
+        print("Removed image with projection error {}".format(max_error))
+
+    print("Filtered {} images with high projection error".format(count))
+    return object_points_array.tolist(), image_points_array.tolist(), ret, mtx, dist, rvecs, tvecs
+
+
+def reduce_light_reflections(image, brightness_reduction=5):
+    # 将图片从BGR转换到HSV色彩空间
+    hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+
+    # 分割HSV通道
+    h, s, v = cv2.split(hsv)
+
+    # 减少亮度通道的亮斑（可通过降低亮度值实现）
+    v = np.clip(v - brightness_reduction, 0, 255)
+
+    # 合并通道
+    final_hsv = cv2.merge((h, s, v))
+
+    # 将HSV转换回BGR色彩空间
+    final_image = cv2.cvtColor(final_hsv, cv2.COLOR_HSV2BGR)
+    return final_image
 
 
 def get_image_points(file_name, _config):
@@ -137,8 +213,9 @@ def get_image_points(file_name, _config):
     else:
         file_name_index = file_name.split('/')[-1]
     img = cv2.imread(file_name)
-    # TODO enhance the image quality input
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
+    enhanced_img = reduce_light_reflections(img)
+    gray = cv2.cvtColor(enhanced_img, cv2.COLOR_BGR2GRAY)
     ret, corners = cv2.findChessboardCorners(gray, pattern_size, None)
 
     if ret:
@@ -205,8 +282,8 @@ def draw_cube(frame, origin, step, _config, rvecs, tvecs, mtx, dist):
         cv2.line(frame, tuple(imgpts[i]), tuple(imgpts[j]), (0, 255, 255), 3)
 
 
-def draw_chessboard(frame, object_points, step, _config):
-    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+def draw_chessboard(enhanced_img, frame, object_points, step, _config):
+    gray = cv2.cvtColor(enhanced_img, cv2.COLOR_BGR2GRAY)
     # Find the chess board corners
     ret, corners = cv2.findChessboardCorners(gray, (_config["width"], _config["height"]), None,
                                              cv2.CALIB_CB_ADAPTIVE_THRESH
@@ -282,8 +359,9 @@ def get_webcam_snapshot(step, _config, width=1280, height=720):
         if not ret:
             print("can not receive frame (stream end?). Exiting...")
             break
+        enhanced_img = reduce_light_reflections(frame)
         # draw the chessboard
-        draw_chessboard(frame, objp, step, _config)
+        draw_chessboard(enhanced_img, frame, objp, step, _config)
         cv2.imshow('Webcam Capture for Online Run {}'.format(1), frame)
         # 按下'q'键退出循环
         if cv2.waitKey(1) & 0xFF == ord(' '):
