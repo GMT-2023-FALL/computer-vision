@@ -130,6 +130,6 @@ Summarize the findings from the calibration runs and how different parameters or
 ## 🤝 Contribution
 
 All team members worked together in several meetings. All team members equally devoted to the
-parts of the essay and the projec
+parts of the assignment.
 
 
