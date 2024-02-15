@@ -160,4 +160,4 @@ cython_debug/
 .idea/
 images/result/auto/*.jpg
 images/result/manual/*.jpg
-parameters/offline-run-1/*.npy
+

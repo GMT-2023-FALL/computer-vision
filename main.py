@@ -1,4 +1,5 @@
 import cv2
+import numpy as np
 
 from OfflineRun.offline_run import offlineRun
 from onlineRun.online_run import onlineRun
@@ -38,5 +39,6 @@ def onlinePhase(config):
 
 
 if __name__ == "__main__":
-    offlinePhase(config=CONFIG)
-    onlinePhase(config=CONFIG)
+    # offlinePhase(config=CONFIG)
+    # onlinePhase(config=CONFIG)
+    print(np.load('parameters/offline-run-3/mtx.npy'))
