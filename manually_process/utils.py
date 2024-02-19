@@ -113,8 +113,8 @@ def manually_find_corner_points(img_path, config):
     # Display the _image
     cv2.imshow('Chessboard', resized_image)
     cv2.waitKey(0)
-    cv2.imwrite("{}/result_{}".format(config["human_detected_images_folder_path"], file_name),
-                resized_image)
+    # cv2.imwrite("{}/result_{}".format(config["human_detected_images_folder_path"], file_name),
+    #             resized_image)
     cv2.destroyAllWindows()
 
 
@@ -205,7 +205,7 @@ def reduce_light_reflections(image, brightness_reduction=5):
 def get_image_points(file_name, _config):
     # if os env is macOS, then use the following code to get the file name
     pattern_size = (_config['width'], _config['height'])
-    auto_detected_images_folder_path = _config['auto_detected_images_folder_path']
+    # auto_detected_images_folder_path = _config['auto_detected_images_folder_path']
     images_points = []
     # detect the os env
     if os.name == 'nt':
@@ -223,7 +223,7 @@ def get_image_points(file_name, _config):
         corners2 = cv2.cornerSubPix(gray, corners, (11, 11), (-1, -1), _config['criteria'])
         # Draw and save the corners
         cv2.drawChessboardCorners(img, pattern_size, corners2, ret)
-        cv2.imwrite("{}/result_{}".format(auto_detected_images_folder_path, file_name_index), img)
+        # cv2.imwrite("{}/result_{}".format(auto_detected_images_folder_path, file_name_index), img)
         print("Auto Detected: {}".format(file_name_index))
         images_points = corners2
     else:

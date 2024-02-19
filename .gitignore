@@ -160,4 +160,7 @@ cython_debug/
 .idea/
 images/result/auto/*.jpg
 images/result/manual/*.jpg
-
+data/cam1/frames/*.png
+data/cam2/frames/*.png
+data/cam3/frames/*.png
+data/cam4/frames/*.png

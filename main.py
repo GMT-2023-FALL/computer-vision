@@ -1,12 +1,9 @@
-import cv2
-import numpy as np
+import cv2 as cv
+from Calibrate.calibrate import calibrate_camera
 
-from OfflineRun.offline_run import offlineRun
-from onlineRun.online_run import onlineRun
-
-WIDTH = 9
+WIDTH = 8
 HEIGHT = 6
-criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
+criteria = (cv.TERM_CRITERIA_EPS + cv.TERM_CRITERIA_MAX_ITER, 30, 0.001)
 IMAGES_FOLDER_PATH = 'images/samples'
 IMAGE_FORMAT = '/*.jpg'
 AUTO_DETECTED_IMAGES_FOLDER_PATH = 'images/result/auto'
@@ -26,19 +23,5 @@ CONFIG = {
 }
 
 
-# offline phase, 3 runs
-def offlinePhase(config):
-    for i in range(1, 4):
-        offlineRun(i, config)
-
-
-# online phase, 3 runs
-def onlinePhase(config):
-    for i in range(1, 4):
-        onlineRun(i, config)
-
-
-if __name__ == "__main__":
-    # offlinePhase(config=CONFIG)
-    # onlinePhase(config=CONFIG)
-    print(np.load('parameters/offline-run-3/mtx.npy'))
+if __name__ == '__main__':
+    calibrate_camera(config=CONFIG)
