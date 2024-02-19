@@ -8,7 +8,7 @@ IMAGES_FOLDER_PATH = 'images/samples'
 IMAGE_FORMAT = '/*.jpg'
 AUTO_DETECTED_IMAGES_FOLDER_PATH = 'images/result/auto'
 HUMAN_DETECTED_IMAGES_FOLDER_PATH = 'images/result/manual'
-image_size = (1280, 720)
+image_size = (644, 486)
 square_size = 2
 CONFIG = {
     "width": WIDTH,

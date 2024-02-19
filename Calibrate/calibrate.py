@@ -3,7 +3,7 @@ import glob
 import numpy as np
 
 from utils.utils import get_frames_from_video
-from manually_process.utils import get_image_points
+from manually_process.utils import get_image_points,save_params
 
 
 def get_object_points(config):
@@ -12,26 +12,28 @@ def get_object_points(config):
     return object_points
 
 
-def get_intrinsics_from_video(video_path, frame_rate, output_path, config):
-    # Get the frames
-    get_frames_from_video(video_path, frame_rate, output_path)
-
+def get_img_and_obj_points_from_images_folder(images_path, config):
     image_points = []
     object_points = []
-    images_list = glob.glob(output_path + '/*.png')
+    images_list = glob.glob(images_path + '/*.png')
     for file_name in images_list:
         image_points.append(get_image_points(file_name, config))
         object_points.append(get_object_points(config))
+    return image_points, object_points
 
 
 def calibrate_camera(config):
-    for index in range(1, 5):
+    for index in range(1, 2):
         # Path to the video
-        video_path = 'E:/UU/Computer_Vision/Assignment-2/data/cam{}/intrinsics.avi'.format(index)
+        video_path = 'data/cam{}/intrinsics.avi'.format(index)
 
         # Frame rate
-        frame_rate = 2
+        frame_rate = 0.5
 
         # Output path
-        output_path = 'E:/UU/Computer_Vision/Assignment-2/data/cam{}/frames'.format(index)
-        get_intrinsics_from_video(video_path, frame_rate, output_path, config)
+        output_path = 'data/cam{}/frames'.format(index)
+        # Get the frames
+        get_frames_from_video(video_path, frame_rate, output_path)
+        img_points, obj_points = get_img_and_obj_points_from_images_folder(output_path, config)
+        camera_parameters_path = 'data/cam{}/camera_parameters'.format(index)
+        save_params(camera_parameters_path, obj_points, img_points, config['image_size'])
