@@ -5,8 +5,9 @@ import numpy as np
 
 # Initialize global variables
 clicked_points = []
-image_points = None
+image_points = []
 original_image = None
+scale = None
 
 
 def mouse_callback(event, x, y, flags, param):
@@ -16,7 +17,7 @@ def mouse_callback(event, x, y, flags, param):
     # 如果点击鼠标左键且点的数量少于4，添加点并在图上绘制
     if event == cv2.EVENT_LBUTTONDOWN and len(clicked_points) < 4:
         clicked_points.append((x, y))
-        cv2.circle(_image, (x, y), 5, (0, 0, 255), -1)
+        cv2.circle(_image, (x, y), 2, (0, 0, 255), -1)
         cv2.imshow('Chessboard', _image)
         if len(clicked_points) == 4:
             # 假设已经定义了interpolate_chessboard_corners函数
@@ -41,22 +42,25 @@ def interpolate_chessboard_corners(corners, param):
     criteria = param['config']['criteria']
     w = param['config']['width']
     h = param['config']['height']
-    world_coord = np.array([[0, (h - 1) * 23], [(w - 1) * 23, (h - 1) * 23], [(w - 1) * 23, 0], [0, 0]], np.float32)
+    square_size = 115
+    world_coord = np.array([[0, (h - 1) * square_size], [(w - 1) * square_size, (h - 1) * square_size], [(w - 1) * square_size, 0], [0, 0]], np.float32)
     coordinates_array = np.array(corners, np.float32)
     M = cv2.getPerspectiveTransform(world_coord, coordinates_array)
     sub_work_coord = np.zeros((w * h, 2), np.float32)
-    sub_work_coord[:, :2] = np.mgrid[0:w, 0:h].T.reshape(-1, 2) * 23
+    sub_work_coord[:, :2] = np.mgrid[0:w, 0:h].T.reshape(-1, 2) * square_size
     sub_work_coord = np.array(sub_work_coord, np.float32)
     res = cv2.perspectiveTransform(sub_work_coord.reshape(-1, 1, 2), M)
     # show the chessboard grid
-    enhanced_img = reduce_light_reflections(_image)
-    gray = cv2.cvtColor(enhanced_img, cv2.COLOR_BGR2GRAY)
+    # enhanced_img = reduce_light_reflections(_image, brightness_reduction=15)
+    gray = cv2.cvtColor(_image, cv2.COLOR_BGR2GRAY)
     corners = np.array(res, np.float32)
     image_points = cv2.cornerSubPix(gray, corners, (11, 11), (-1, -1), criteria)
 
     # Return the array of points
     cv2.drawChessboardCorners(_image, (w, h), image_points, True)
     cv2.imshow('Chessboard', _image)
+    # get the original image points, divide by the scale
+    image_points = image_points / scale
 
 
 def get_screen_resolution():
@@ -65,14 +69,15 @@ def get_screen_resolution():
     return monitor.width, monitor.height
 
 
-def resize_image_to_screen(_image, _screen_width, _screen_height, buffer=50):
+def resize_image_to_screen(_image, _screen_width, _screen_height, buffer=100):
+    global scale
     # 计算缩放比例
     scale_width = (_screen_width - buffer) / _image.shape[1]
     scale_height = (_screen_height - buffer) / _image.shape[0]
     scale = min(scale_width, scale_height)
-
-    # 确保图片不会放大，只缩小
-    scale = min(scale, 1.0)
+    #
+    # # 确保图片不会放大，只缩小
+    # scale = min(scale, 1.0)
 
     # 计算新的图片尺寸
     new_width = int(_image.shape[1] * scale)
@@ -120,9 +125,10 @@ def manually_find_corner_points(img_path, config):
 
 def save_params(_parameter_file_path, _object_points_list, _image_points_list, _dimension):
     # Filter out bad images
-    filtered_object_points, filtered_image_points, ret, mtx, dist, rvecs, tvecs = filter_bad_images(
-        _object_points_list, _image_points_list, _dimension
-    )
+    # filtered_object_points, filtered_image_points, ret, mtx, dist, rvecs, tvecs = filter_bad_images(
+    #     _object_points_list, _image_points_list, _dimension
+    # )
+    et, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(_object_points_list, _image_points_list, _dimension, None, None)
     # Save the parameters to a file
     np.save('{}/mtx.npy'.format(_parameter_file_path), mtx)
     np.save('{}/dist.npy'.format(_parameter_file_path), dist)
@@ -184,7 +190,7 @@ def filter_bad_images(_object_points_list, _image_points_list, _dimension, max_r
     return object_points_array.tolist(), image_points_array.tolist(), ret, mtx, dist, rvecs, tvecs
 
 
-def reduce_light_reflections(image, brightness_reduction=5):
+def reduce_light_reflections(image, brightness_reduction):
     # 将图片从BGR转换到HSV色彩空间
     hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
 
@@ -203,6 +209,7 @@ def reduce_light_reflections(image, brightness_reduction=5):
 
 
 def get_image_points(file_name, _config):
+    global image_points
     # if os env is macOS, then use the following code to get the file name
     pattern_size = (_config['width'], _config['height'])
     # auto_detected_images_folder_path = _config['auto_detected_images_folder_path']
@@ -214,8 +221,8 @@ def get_image_points(file_name, _config):
         file_name_index = file_name.split('/')[-1]
     img = cv2.imread(file_name)
 
-    enhanced_img = reduce_light_reflections(img)
-    gray = cv2.cvtColor(enhanced_img, cv2.COLOR_BGR2GRAY)
+    # enhanced_img = reduce_light_reflections(img, brightness_reduction=15)
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     ret, corners = cv2.findChessboardCorners(gray, pattern_size, None)
 
     if ret:
@@ -227,14 +234,16 @@ def get_image_points(file_name, _config):
         print("Auto Detected: {}".format(file_name_index))
         images_points = corners2
     else:
+        # pass
         manually_find_corner_points(file_name, _config)
         images_points = image_points
     cv2.destroyAllWindows()
+    image_points = []
     return images_points
 
 
-def get_camera_intrinsic(_config, step):
-    parameter_file_path = 'parameters/offline-run-{}'.format(step)
+def get_camera_intrinsic(step):
+    parameter_file_path = 'data/cam{}/camera_parameters'.format(step)
     mtx = np.load('{}/mtx.npy'.format(parameter_file_path))
     dist = np.load('{}/dist.npy'.format(parameter_file_path))
     return mtx, dist
@@ -282,7 +291,7 @@ def draw_cube(frame, origin, step, _config, rvecs, tvecs, mtx, dist):
         cv2.line(frame, tuple(imgpts[i]), tuple(imgpts[j]), (0, 255, 255), 3)
 
 
-def draw_chessboard(enhanced_img, frame, object_points, step, _config):
+def draw_chessboard(enhanced_img, frame, object_points, step, _config, manually_detected_corners=None):
     gray = cv2.cvtColor(enhanced_img, cv2.COLOR_BGR2GRAY)
     # Find the chess board corners
     ret, corners = cv2.findChessboardCorners(gray, (_config["width"], _config["height"]), None,
@@ -292,9 +301,9 @@ def draw_chessboard(enhanced_img, frame, object_points, step, _config):
     if ret:
         corners2 = cv2.cornerSubPix(gray, corners, (11, 11), (-1, -1), _config["criteria"])
         # Draw and display the corners
-        cv2.drawChessboardCorners(frame, (_config["width"], _config["height"]), corners2, ret)
+        # cv2.drawChessboardCorners(frame, (_config["width"], _config["height"]), corners2, ret)
         # get the camera intrinsic parameters
-        mtx, dist = get_camera_intrinsic(_config, step)
+        mtx, dist = get_camera_intrinsic(step)
         # Find the rotation and translation vectors.
         ret, rvecs, tvecs = cv2.solvePnP(object_points, corners2, mtx, dist)
         # Project 3D points to image plane
@@ -302,7 +311,19 @@ def draw_chessboard(enhanced_img, frame, object_points, step, _config):
         axis_points, jac = cv2.projectPoints(axis, rvecs, tvecs, mtx, dist)
         draw_axis(frame, np.int32(corners2[0][0]), axis_points)
         # draw a cube and xyz axis on the chessboard
-        draw_cube(frame, np.int32(corners2[0][0]), step, _config, rvecs, tvecs, mtx, dist)
+        # draw_cube(frame, np.int32(corners2[0][0]), step, _config, rvecs, tvecs, mtx, dist)
+    else:
+        corners2 = cv2.cornerSubPix(gray, manually_detected_corners, (11, 11), (-1, -1), _config["criteria"])
+        # Draw and display the corners
+        # cv2.drawChessboardCorners(frame, (_config["width"], _config["height"]), corners2, ret)
+        # get the camera intrinsic parameters
+        mtx, dist = get_camera_intrinsic(step)
+        # Find the rotation and translation vectors.
+        ret, rvecs, tvecs = cv2.solvePnP(object_points, corners2, mtx, dist)
+        # Project 3D points to image plane
+        axis = np.float32([[3, 0, 0], [0, 3, 0], [0, 0, -3]])
+        axis_points, jac = cv2.projectPoints(axis, rvecs, tvecs, mtx, dist)
+        draw_axis(frame, np.int32(corners2[0][0]), axis_points)
 
 
 def draw_axis(img, origin, image_project_points, scale=1.5):
@@ -328,7 +349,7 @@ def draw_axis(img, origin, image_project_points, scale=1.5):
         # Calculate new end point
         pt2_scaled = (pt1[0] + int(direction[0]), pt1[1] + int(direction[1]))
         # Draw extended axis line
-        cv2.line(img, pt1, pt2_scaled, color[i], 5)
+        cv2.line(img, pt1, pt2_scaled, color[i], 3)
 
 
 def get_webcam_snapshot(step, _config, width=1280, height=720):
@@ -359,7 +380,7 @@ def get_webcam_snapshot(step, _config, width=1280, height=720):
         if not ret:
             print("can not receive frame (stream end?). Exiting...")
             break
-        enhanced_img = reduce_light_reflections(frame)
+        enhanced_img = reduce_light_reflections(frame, 15)
         # draw the chessboard
         draw_chessboard(enhanced_img, frame, objp, step, _config)
         cv2.imshow('Webcam Capture for Online Run {}'.format(1), frame)
