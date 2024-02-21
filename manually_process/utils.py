@@ -125,10 +125,10 @@ def manually_find_corner_points(img_path, config):
 
 def save_params(_parameter_file_path, _object_points_list, _image_points_list, _dimension):
     # Filter out bad images
-    # filtered_object_points, filtered_image_points, ret, mtx, dist, rvecs, tvecs = filter_bad_images(
-    #     _object_points_list, _image_points_list, _dimension
-    # )
-    et, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(_object_points_list, _image_points_list, _dimension, None, None)
+    filtered_object_points, filtered_image_points, ret, mtx, dist, rvecs, tvecs = filter_bad_images(
+        _object_points_list, _image_points_list, _dimension
+    )
+    # et, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(_object_points_list, _image_points_list, _dimension, None, None)
     # Save the parameters to a file
     np.save('{}/mtx.npy'.format(_parameter_file_path), mtx)
     np.save('{}/dist.npy'.format(_parameter_file_path), dist)

@@ -35,18 +35,15 @@ def render_axis_on_video(video_path, config, width=644, height=486, step=1):
     h = config['height']
     # # 打开视频文件
     video = cv.VideoCapture(video_path)
-    # cap = cv2.VideoCapture(0)
 
-    # 检查相机是否成功打开
+    # 检查视频是否成功打开
     if not video.isOpened():
         print("can not open the camera. Exiting...")
         exit()
 
-    # 设置相机分辨率为1280x720
+    # 设置分辨率
     video.set(cv.CAP_PROP_FRAME_WIDTH, width)
     video.set(cv.CAP_PROP_FRAME_HEIGHT, height)
-
-    captured_frame = None  # 初始化一个变量来存储捕获的帧
 
     # generate object points
     objp = np.zeros((w * h, 3), np.float32)
@@ -73,7 +70,7 @@ def render_axis_on_video(video_path, config, width=644, height=486, step=1):
 
 
 def calibrate_camera(config):
-    for index in range(4, 5):
+    for index in range(1, 5):
         # Path to the video
         video_path = 'data/cam{}/intrinsics.avi'.format(index)
 
