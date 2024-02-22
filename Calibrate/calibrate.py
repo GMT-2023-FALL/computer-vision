@@ -1,11 +1,10 @@
 import glob
 
-import numpy as np
 import cv2 as cv
+import numpy as np
 
+from manually_process.utils import get_image_points, save_params, draw_chessboard
 from utils.utils import get_frames_from_video
-from manually_process.utils import get_image_points, save_params, reduce_light_reflections, draw_chessboard, \
-    resize_image_to_screen, get_screen_resolution
 
 
 def get_object_points(config):
@@ -18,15 +17,20 @@ def get_img_and_obj_points_from_images_folder(images_path, config):
     image_points = []
     object_points = []
     counter = 0
+    total = 25
     images_list = glob.glob(images_path + '/*.png')
     for file_name in images_list:
-        if counter >= 25:
+        print(" [{}/{}] ".format(counter, total))
+        if counter >= total:
             break
-        img_points = get_image_points(file_name, config)
-        if len(img_points) != 0:
-            image_points.append(get_image_points(file_name, config))
+        _img_points = get_image_points(file_name, config)
+        if len(_img_points) != 0:
+            image_points.append(_img_points)
             object_points.append(get_object_points(config))
+            print("{}".format("Detected Corners Successfully!"))
             counter += 1
+        else:
+            print("skip image {} ".format(file_name))
     return image_points, object_points
 
 
@@ -70,7 +74,7 @@ def render_axis_on_video(video_path, config, width=644, height=486, step=1):
 
 
 def calibrate_camera(config):
-    for index in range(1, 5):
+    for index in range(2, 3):
         # Path to the video
         video_path = 'data/cam{}/intrinsics.avi'.format(index)
 
@@ -80,7 +84,7 @@ def calibrate_camera(config):
         # Output path
         output_path = 'data/cam{}/frames'.format(index)
         # Get the frames
-        get_frames_from_video(video_path, frame_rate, output_path)
+        # get_frames_from_video(video_path, frame_rate, output_path)
         img_points, obj_points = get_img_and_obj_points_from_images_folder(output_path, config)
         camera_parameters_path = 'data/cam{}/camera_parameters'.format(index)
         save_params(camera_parameters_path, obj_points, img_points, config['image_size'])

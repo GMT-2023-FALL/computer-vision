@@ -54,13 +54,13 @@ def interpolate_chessboard_corners(corners, param):
     # enhanced_img = reduce_light_reflections(_image, brightness_reduction=15)
     gray = cv2.cvtColor(_image, cv2.COLOR_BGR2GRAY)
     corners = np.array(res, np.float32)
-    image_points = cv2.cornerSubPix(gray, corners, (11, 11), (-1, -1), criteria)
+    _image_points = cv2.cornerSubPix(gray, corners, (11, 11), (-1, -1), criteria)
 
     # Return the array of points
-    cv2.drawChessboardCorners(_image, (w, h), image_points, True)
+    cv2.drawChessboardCorners(_image, (w, h), _image_points, True)
     cv2.imshow('Chessboard', _image)
     # get the original image points, divide by the scale
-    image_points = image_points / scale
+    image_points = _image_points / scale
 
 
 def get_screen_resolution():
@@ -73,7 +73,7 @@ def resize_image_to_screen(_image, _screen_width, _screen_height, buffer=100):
     global scale
     # 计算缩放比例
     scale_width = (_screen_width - buffer) / _image.shape[1]
-    scale_height = (_screen_height - buffer) / _image.shape[0]
+    scale_height = (_screen_height - 2 * buffer) / _image.shape[0]
     scale = min(scale_width, scale_height)
     #
     # # 确保图片不会放大，只缩小
@@ -106,6 +106,7 @@ def manually_find_corner_points(img_path, config):
 
     # 根据屏幕分辨率缩放图片
     resized_image = resize_image_to_screen(image, screen_width, screen_height)
+    resized_image = reduce_light_reflections(resized_image, brightness_reduction=config['brightness_reduction'])
     original_image = resized_image.copy()
 
     # Set mouse callback function
@@ -210,10 +211,10 @@ def reduce_light_reflections(image, brightness_reduction):
 
 def get_image_points(file_name, _config):
     global image_points
+    image_points = []
     # if os env is macOS, then use the following code to get the file name
     pattern_size = (_config['width'], _config['height'])
     # auto_detected_images_folder_path = _config['auto_detected_images_folder_path']
-    images_points = []
     # detect the os env
     if os.name == 'nt':
         file_name_index = file_name.split('\\')[-1]
@@ -221,8 +222,8 @@ def get_image_points(file_name, _config):
         file_name_index = file_name.split('/')[-1]
     img = cv2.imread(file_name)
 
-    # enhanced_img = reduce_light_reflections(img, brightness_reduction=15)
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    enhanced_img = reduce_light_reflections(img, brightness_reduction=_config['brightness_reduction'])
+    gray = cv2.cvtColor(enhanced_img, cv2.COLOR_BGR2GRAY)
     ret, corners = cv2.findChessboardCorners(gray, pattern_size, None)
 
     if ret:
@@ -232,14 +233,11 @@ def get_image_points(file_name, _config):
         cv2.drawChessboardCorners(img, pattern_size, corners2, ret)
         # cv2.imwrite("{}/result_{}".format(auto_detected_images_folder_path, file_name_index), img)
         print("Auto Detected: {}".format(file_name_index))
-        images_points = corners2
+        image_points = corners2
     else:
-        # pass
         manually_find_corner_points(file_name, _config)
-        images_points = image_points
     cv2.destroyAllWindows()
-    image_points = []
-    return images_points
+    return image_points
 
 
 def get_camera_intrinsic(step):
