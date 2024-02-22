@@ -85,9 +85,9 @@ def calibrate_camera(config):
         output_path = 'data/cam{}/frames'.format(index)
         # Get the frames
         # get_frames_from_video(video_path, frame_rate, output_path)
-        img_points, obj_points = get_img_and_obj_points_from_images_folder(output_path, config)
-        camera_parameters_path = 'data/cam{}/camera_parameters'.format(index)
-        save_params(camera_parameters_path, obj_points, img_points, config['image_size'])
+        # img_points, obj_points = get_img_and_obj_points_from_images_folder(output_path, config)
+        # camera_parameters_path = 'data/cam{}/camera_parameters'.format(index)
+        # save_params(camera_parameters_path, obj_points, img_points, config['image_size'])
         # rendering the world axis on the video
         video_to_render_path = 'data/cam{}/checkerboard.avi'.format(index)
         render_axis_on_video(video_to_render_path, config, step=index)
