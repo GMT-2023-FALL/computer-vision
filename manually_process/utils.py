@@ -43,7 +43,9 @@ def interpolate_chessboard_corners(corners, param):
     w = param['config']['width']
     h = param['config']['height']
     square_size = 115
-    world_coord = np.array([[0, (h - 1) * square_size], [(w - 1) * square_size, (h - 1) * square_size], [(w - 1) * square_size, 0], [0, 0]], np.float32)
+    world_coord = np.array(
+        [[0, (h - 1) * square_size], [(w - 1) * square_size, (h - 1) * square_size], [(w - 1) * square_size, 0],
+         [0, 0]], np.float32)
     coordinates_array = np.array(corners, np.float32)
     M = cv2.getPerspectiveTransform(world_coord, coordinates_array)
     sub_work_coord = np.zeros((w * h, 2), np.float32)
@@ -164,14 +166,15 @@ def filter_bad_images(_object_points_list, _image_points_list, _dimension, max_r
     count = 0
     while True:
         # Calibrate the camera using the current sets of points
-        ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(object_points_array, image_points_array, _dimension, None, None)
+        ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(object_points_array, image_points_array, _dimension, None,
+                                                           None)
 
         # Calculate the reprojection errors for each image
         max_error = 0
         max_error_index = -1
         for i in range(len(object_points_array)):
             imgpoints2, _ = cv2.projectPoints(object_points_array[i], rvecs[i], tvecs[i], mtx, dist)
-            error = cv2.norm(image_points_array[i], imgpoints2, cv2.NORM_L2)/len(imgpoints2)
+            error = cv2.norm(image_points_array[i], imgpoints2, cv2.NORM_L2) / len(imgpoints2)
             # print("Reprojection error for image {}: {}".format(i, error))
             if error > max_error:
                 max_error = error

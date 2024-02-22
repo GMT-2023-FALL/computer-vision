@@ -74,7 +74,7 @@ def render_axis_on_video(video_path, config, width=644, height=486, step=1):
 
 
 def calibrate_camera(config):
-    for index in range(2, 3):
+    for index in range(1, 5):
         # Path to the video
         video_path = 'data/cam{}/intrinsics.avi'.format(index)
 
@@ -84,10 +84,10 @@ def calibrate_camera(config):
         # Output path
         output_path = 'data/cam{}/frames'.format(index)
         # Get the frames
-        # get_frames_from_video(video_path, frame_rate, output_path)
-        # img_points, obj_points = get_img_and_obj_points_from_images_folder(output_path, config)
-        # camera_parameters_path = 'data/cam{}/camera_parameters'.format(index)
-        # save_params(camera_parameters_path, obj_points, img_points, config['image_size'])
+        get_frames_from_video(video_path, frame_rate, output_path)
+        img_points, obj_points = get_img_and_obj_points_from_images_folder(output_path, config)
+        camera_parameters_path = 'data/cam{}/camera_parameters'.format(index)
+        save_params(camera_parameters_path, obj_points, img_points, config['image_size'])
         # rendering the world axis on the video
         video_to_render_path = 'data/cam{}/checkerboard.avi'.format(index)
         render_axis_on_video(video_to_render_path, config, step=index)
