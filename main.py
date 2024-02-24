@@ -1,6 +1,8 @@
 import cv2 as cv
-from Calibrate.calibrate import calibrate_camera
+
 from Background_Subtraction.background_subtraction import background_process
+from Calibrate.calibrate import calibrate_camera
+from Voxel_Restruction.voxel_restruction import generate_voxel_map
 
 WIDTH = 8
 HEIGHT = 6
@@ -29,5 +31,6 @@ CONFIG = {
 
 if __name__ == '__main__':
     calibrate_camera(config=CONFIG)
-    # background_process(config=CONFIG)
+    background_process(config=CONFIG)
+    generate_voxel_map(config=CONFIG)
 
