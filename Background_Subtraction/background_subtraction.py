@@ -82,17 +82,24 @@ def find_optimal_thresholds(video_image, background_image, manual_segmentation):
     return optimal_thresholds, best_similarity
 
 
-def post_process_foreground(foreground_image, kernel_size=5, iterations=2):
-    # 定义腐蚀和膨胀的核
-    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (kernel_size, kernel_size))
+def post_process_foreground(foreground_image, kernel_size=1, iterations=3):
+    # 连通组件标记，去除较小的不连通部分，保留主要的前景部分
+    _, labels, stats, centroids = cv2.connectedComponentsWithStats(foreground_image)
 
-    # 对前景图像进行腐蚀操作，以去除小的白色斑点
-    eroded = cv2.erode(foreground_image, kernel, iterations=iterations)
+    min_area = 4800  # 设置最小面积阈值，用于去除小连通区域
+    for i in range(1, stats.shape[0]):
+        if stats[i, cv2.CC_STAT_AREA] < min_area:
+            foreground_image[labels == i] = 0  # 将面积小于阈值的连通区域置为背景
 
-    # 对腐蚀后的图像进行膨胀操作，以恢复前景物体的形状和大小
-    dilated = cv2.dilate(eroded, kernel, iterations=iterations)
+    # 对前景掩码再次进行膨胀操作，以填补前景中的空洞
+    kernel_dilate = np.ones((6, 6), np.uint8)
+    foreground_mask = cv2.dilate(foreground_image, kernel_dilate, iterations=1)
 
-    return dilated
+    # 对处理后的前景掩码进行腐蚀操作，以去除较小的孤立像素
+    kernel_erode = np.ones((3, 3), np.uint8)
+    foreground_mask = cv2.erode(foreground_mask, kernel_erode, iterations=1)
+
+    return foreground_mask
 
 
 def background_subtraction(video_file, background_image, output_file_path, index):
@@ -101,11 +108,12 @@ def background_subtraction(video_file, background_image, output_file_path, index
     # Automatically Determine threshold values
     video_image = "data/cam{}/segment/video.jpg".format(index)
     manual_segmentation = "data/cam{}/video_manual_segment.png".format(index)
-    optimal_thresholds, best_similarity = find_optimal_thresholds( video_image, background_image, manual_segmentation)
+    optimal_thresholds, best_similarity = find_optimal_thresholds(video_image, background_image, manual_segmentation)
     print("Optimal thresholds: {} Similarity: {}".format(optimal_thresholds, best_similarity))
     hue_threshold, saturation_threshold, value_threshold = optimal_thresholds
     # hue_threshold, saturation_threshold, value_threshold = 110, 180, 30
-    print("Hue threshold: {} Saturation threshold: {} Value threshold: {}".format(hue_threshold, saturation_threshold, value_threshold))
+    print("Hue threshold: {} Saturation threshold: {} Value threshold: {}".format(hue_threshold, saturation_threshold,
+                                                                                  value_threshold))
 
     # Convert the background image to HSV color space
     background_hsv = cv2.cvtColor(background_model, cv2.COLOR_BGR2HSV)
@@ -139,7 +147,6 @@ def background_subtraction(video_file, background_image, output_file_path, index
         foreground_mask = cv2.bitwise_or(thresh_hue, cv2.bitwise_or(thresh_saturation, thresh_value))
 
     cap.release()
-    cv2.destroyAllWindows()
     foreground_mask = post_process_foreground(foreground_mask)
     cv2.imwrite(output_file_path, foreground_mask)
 
@@ -148,8 +155,8 @@ def background_process(config):
     for index in range(1, 5):
         background_video_path = "data/cam{}/background.avi".format(index)
         model_path = "data/cam{}".format(index)
-        # create_background_model(background_video_path, model_path)
-        # print("Background model for camera {} created.".format(index))
+        create_background_model(background_video_path, model_path)
+        print("Background model for camera {} created.".format(index))
         background_img_path = model_path + "/background_image.png".format(index)
         video_img_path = model_path + "/video.avi"
         foreground_img_path = model_path + "/foreground.png"
