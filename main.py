@@ -28,6 +28,6 @@ CONFIG = {
 
 
 if __name__ == '__main__':
-    # calibrate_camera(config=CONFIG)
-    background_process(config=CONFIG)
+    calibrate_camera(config=CONFIG)
+    # background_process(config=CONFIG)
 

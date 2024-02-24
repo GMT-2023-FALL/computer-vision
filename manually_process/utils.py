@@ -56,8 +56,8 @@ def interpolate_chessboard_corners(corners, param):
     # enhanced_img = reduce_light_reflections(_image, brightness_reduction=15)
     gray = cv2.cvtColor(_image, cv2.COLOR_BGR2GRAY)
     corners = np.array(res, np.float32)
-    _image_points = cv2.cornerSubPix(gray, corners, (11, 11), (-1, -1), criteria)
-
+    # _image_points = cv2.cornerSubPix(gray, corners, (11, 11), (-1, -1), criteria)
+    _image_points = corners
     # Return the array of points
     cv2.drawChessboardCorners(_image, (w, h), _image_points, True)
     cv2.imshow('Chessboard', _image)
@@ -235,6 +235,8 @@ def get_image_points(file_name, _config):
         # Draw and save the corners
         cv2.drawChessboardCorners(img, pattern_size, corners2, ret)
         # cv2.imwrite("{}/result_{}".format(auto_detected_images_folder_path, file_name_index), img)
+        # cv2.imshow("Auto Detected: {}".format(file_name_index), img)
+        # cv2.waitKey(0)
         print("Auto Detected: {}".format(file_name_index))
         image_points = corners2
     else:
@@ -314,16 +316,18 @@ def draw_chessboard(enhanced_img, frame, object_points, step, _config, manually_
         # draw a cube and xyz axis on the chessboard
         # draw_cube(frame, np.int32(corners2[0][0]), step, _config, rvecs, tvecs, mtx, dist)
     else:
-        corners2 = cv2.cornerSubPix(gray, manually_detected_corners, (11, 11), (-1, -1), _config["criteria"])
+        # corners2 = cv2.cornerSubPix(gray, manually_detected_corners, (11, 11), (-1, -1), _config["criteria"])
+        corners2 = manually_detected_corners
         # Draw and display the corners
         # cv2.drawChessboardCorners(frame, (_config["width"], _config["height"]), corners2, ret)
         # get the camera intrinsic parameters
         mtx, dist = get_camera_intrinsic(step)
         # Find the rotation and translation vectors.
         ret, rvecs, tvecs = cv2.solvePnP(object_points, corners2, mtx, dist)
+        R, _ = cv2.Rodrigues(rvecs)
         # Project 3D points to image plane
         axis = np.float32([[3, 0, 0], [0, 3, 0], [0, 0, -3]])
-        axis_points, jac = cv2.projectPoints(axis, rvecs, tvecs, mtx, dist)
+        axis_points, jac = cv2.projectPoints(axis, R, tvecs, mtx, dist)
         draw_axis(frame, np.int32(corners2[0][0]), axis_points)
 
 
@@ -350,7 +354,7 @@ def draw_axis(img, origin, image_project_points, scale=1.5):
         # Calculate new end point
         pt2_scaled = (pt1[0] + int(direction[0]), pt1[1] + int(direction[1]))
         # Draw extended axis line
-        cv2.line(img, pt1, pt2_scaled, color[i], 3)
+        cv2.line(img, pt1, pt2_scaled, color[i], 2)
 
 
 def get_webcam_snapshot(step, _config, width=1280, height=720):
