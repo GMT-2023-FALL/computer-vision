@@ -1,5 +1,6 @@
 import cv2 as cv
 from Calibrate.calibrate import calibrate_camera
+from Background_Subtraction.background_subtraction import background_process
 
 WIDTH = 8
 HEIGHT = 6
@@ -27,4 +28,6 @@ CONFIG = {
 
 
 if __name__ == '__main__':
-    calibrate_camera(config=CONFIG)
+    # calibrate_camera(config=CONFIG)
+    background_process(config=CONFIG)
+
