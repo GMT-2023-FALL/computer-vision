@@ -1,3 +1,5 @@
+from multiprocessing import Pool
+
 import cv2
 import numpy as np
 
@@ -44,40 +46,49 @@ def calculate_similarity(mask1, mask2):
     return similarity
 
 
+def calculate_similarity_parallel(threshold, diff_hsv, manual_segmentation):
+    h, s, v = threshold
+    _, thresh_hue = cv2.threshold(diff_hsv[:, :, 0], h, 255, cv2.THRESH_BINARY)
+    _, thresh_saturation = cv2.threshold(diff_hsv[:, :, 1], s, 255, cv2.THRESH_BINARY)
+    _, thresh_value = cv2.threshold(diff_hsv[:, :, 2], v, 255, cv2.THRESH_BINARY)
+    foreground_mask = cv2.bitwise_or(thresh_hue, cv2.bitwise_or(thresh_saturation, thresh_value))
+    similarity = calculate_similarity(foreground_mask, manual_segmentation)
+    return threshold, similarity
+
+
+def calculate_similarity_wrapper(args):
+    # Wrapper function to handle arguments for calculate_similarity_parallel
+    threshold, diff_hsv, manual_segmentation = args
+    return calculate_similarity_parallel(threshold, diff_hsv, manual_segmentation)
+
+
 def find_optimal_thresholds(video_image, background_image, manual_segmentation):
     # Read the background image and manual segmentation
     background_model = cv2.imread(background_image)
-    # Convert the frame to HSV color space
     frame_hsv = cv2.cvtColor(cv2.imread(video_image), cv2.COLOR_BGR2HSV)
-
-    # Convert the background image to HSV color space
     background_hsv = cv2.cvtColor(background_model, cv2.COLOR_BGR2HSV)
-
     manual_segmentation = cv2.imread(manual_segmentation, cv2.IMREAD_GRAYSCALE)
 
-    # Initialize variables to store optimal thresholds and similarity score
+    # Initialize variables
     best_similarity = 0
     optimal_thresholds = None
-    # Calculate the absolute difference between the frame and the background model
     diff_hsv = cv2.absdiff(frame_hsv, background_hsv)
 
-    # Iterate over different combinations of thresholds
-    for hue_threshold in range(0, 256, 10):
-        for saturation_threshold in range(0, 256, 10):
-            for value_threshold in range(0, 256, 10):
-                # Perform background subtraction using current thresholds
-                _, thresh_hue = cv2.threshold(diff_hsv[:, :, 0], hue_threshold, 255, cv2.THRESH_BINARY)
-                _, thresh_saturation = cv2.threshold(diff_hsv[:, :, 1], saturation_threshold, 255, cv2.THRESH_BINARY)
-                _, thresh_value = cv2.threshold(diff_hsv[:, :, 2], value_threshold, 255, cv2.THRESH_BINARY)
-                foreground_mask = cv2.bitwise_or(thresh_hue, cv2.bitwise_or(thresh_saturation, thresh_value))
+    # Generate combinations of thresholds
+    thresholds = [(h, s, v) for h in range(0, 256, 10)
+                            for s in range(0, 256, 10)
+                            for v in range(0, 256, 10)]
 
-                # Calculate similarity between algorithm's output and manual segmentation
-                similarity = calculate_similarity(foreground_mask, manual_segmentation)
+    # Use multiprocessing Pool to parallelize the calculations
+    with Pool() as pool:
+        args = [(threshold, diff_hsv, manual_segmentation) for threshold in thresholds]
+        results = pool.map(calculate_similarity_wrapper, args)
 
-                # Update optimal thresholds if similarity is higher
-                if similarity > best_similarity:
-                    best_similarity = similarity
-                    optimal_thresholds = (hue_threshold, saturation_threshold, value_threshold)
+    # Find optimal thresholds based on highest similarity
+    for threshold, similarity in results:
+        if similarity > best_similarity:
+            best_similarity = similarity
+            optimal_thresholds = threshold
 
     return optimal_thresholds, best_similarity
 
