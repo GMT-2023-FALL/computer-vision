@@ -1,8 +1,10 @@
+import cv2
 import cv2 as cv
 
 from Background_Subtraction.background_subtraction import background_process
 from Calibrate.calibrate import calibrate_camera
 from Voxel_Restruction.voxel_restruction import generate_voxel_map
+from manually_process.utils import get_camera_intrinsic, get_camera_extrinsic
 
 WIDTH = 8
 HEIGHT = 6
@@ -30,7 +32,8 @@ CONFIG = {
 
 
 if __name__ == '__main__':
-    calibrate_camera(config=CONFIG)
-    background_process(config=CONFIG)
+    # calibrate_camera(config=CONFIG)
+    # background_process(config=CONFIG)
     generate_voxel_map(config=CONFIG)
-
+    # cv2.imshow('image', cv2.imread('data/cam1/video_manual_segment.png', cv2.IMREAD_GRAYSCALE))
+    # cv2.waitKey(0)

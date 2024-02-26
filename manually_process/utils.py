@@ -2,6 +2,7 @@ import os
 
 import cv2
 import numpy as np
+from tqdm import tqdm
 
 # Initialize global variables
 clicked_points = []
@@ -131,12 +132,9 @@ def save_params(_parameter_file_path, _object_points_list, _image_points_list, _
     filtered_object_points, filtered_image_points, ret, mtx, dist, rvecs, tvecs = filter_bad_images(
         _object_points_list, _image_points_list, _dimension
     )
-    # et, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(_object_points_list, _image_points_list, _dimension, None, None)
     # Save the parameters to a file
     np.save('{}/mtx.npy'.format(_parameter_file_path), mtx)
     np.save('{}/dist.npy'.format(_parameter_file_path), dist)
-    np.save('{}/rvecs.npy'.format(_parameter_file_path), rvecs)
-    np.save('{}/tvecs.npy'.format(_parameter_file_path), tvecs)
 
 
 def filter_bad_images(_object_points_list, _image_points_list, _dimension, max_reprojection_error=0.25):
@@ -168,6 +166,7 @@ def filter_bad_images(_object_points_list, _image_points_list, _dimension, max_r
         # Calibrate the camera using the current sets of points
         ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(object_points_array, image_points_array, _dimension, None,
                                                            None)
+        print(mtx.shape, dist.shape, rvecs, tvecs)
 
         # Calculate the reprojection errors for each image
         max_error = 0
@@ -252,8 +251,8 @@ def get_camera_intrinsic(step):
     return mtx, dist
 
 
-def get_camera_extrinsic(_config, step):
-    parameter_file_path = 'parameters/offline-run-{}'.format(step)
+def get_camera_extrinsic( step):
+    parameter_file_path = 'data/cam{}/camera_parameters'.format(step)
     rvecs = np.load('{}/rvecs.npy'.format(parameter_file_path))
     tvecs = np.load('{}/tvecs.npy'.format(parameter_file_path))
     return rvecs, tvecs
@@ -325,6 +324,8 @@ def draw_chessboard(enhanced_img, frame, object_points, step, _config, manually_
         # Find the rotation and translation vectors.
         ret, rvecs, tvecs = cv2.solvePnP(object_points, corners2, mtx, dist)
         R, _ = cv2.Rodrigues(rvecs)
+        np.save('data/cam{}/camera_parameters/rvecs.npy'.format(step), rvecs)
+        np.save('data/cam{}/camera_parameters/tvecs.npy'.format(step), tvecs)
         # Project 3D points to image plane
         axis = np.float32([[3, 0, 0], [0, 3, 0], [0, 0, -3]])
         axis_points, jac = cv2.projectPoints(axis, R, tvecs, mtx, dist)
@@ -402,3 +403,79 @@ def get_webcam_snapshot(step, _config, width=1280, height=720):
     cv2.destroyAllWindows()
 
     return captured_frame  # 返回捕获的帧
+
+
+def rotate_voxels(data, angle, axis):
+    """
+    Rotate voxel data around the given axis by the given angle.
+
+    Parameters:
+    data : list
+        The voxel data as a list of coordinates.
+    angle : float
+        The rotation angle in radians.
+    axis : str
+        The axis to rotate around: 'x', 'y', or 'z'.
+
+    Returns:
+    list
+        The rotated voxel data.
+    """
+    # Create a rotation matrix for the given axis
+    if axis == 'x':
+        rot_matrix = np.array([[1, 0, 0],
+                               [0, np.cos(angle), -np.sin(angle)],
+                               [0, np.sin(angle), np.cos(angle)]])
+    elif axis == 'y':
+        rot_matrix = np.array([[np.cos(angle), 0, np.sin(angle)],
+                               [0, 1, 0],
+                               [-np.sin(angle), 0, np.cos(angle)]])
+    elif axis == 'z':
+        rot_matrix = np.array([[np.cos(angle), -np.sin(angle), 0],
+                               [np.sin(angle), np.cos(angle), 0],
+                               [0, 0, 1]])
+    else:
+        raise ValueError("Axis must be 'x', 'y', or 'z'")
+
+    # Apply the rotation matrix to each voxel
+    rotated_data = [np.dot(rot_matrix, voxel) for voxel in data]
+
+    return rotated_data
+
+
+def is_foreground_in_image(pixel, image):
+    if np.any(np.isinf(pixel)) or np.any(np.isnan(pixel)):
+        return False  # 如果像素坐标无效，则直接返回False
+    # 检查像素是否位于图像的前景区域
+    x, y = int(pixel[0]), int(pixel[1])
+    if 0 <= x < image.shape[1] and 0 <= y < image.shape[0]:
+        return image[y, x] > 0  # 检查三个通道中至少有一个大于0
+    return False
+
+
+def process_voxel_chunk(chunk_bounds, cam_configs, foreground_images, width, depth, block_size):
+    data, colors = [], []
+    white_color = [256, 256, 256]
+    x_start, x_end, y_start, y_end, z_start, z_end = chunk_bounds
+
+    for x in tqdm(np.linspace(x_start, x_end, num=1000)):
+        for y in np.linspace(y_start, y_end, num=1000):
+            for z in np.linspace(z_start, z_end, num=300):
+                position = [x * block_size - width / 2, y * block_size, z * block_size - depth / 2]
+                voxel_world = np.array([position], dtype=np.float32)
+                is_foreground = True
+                for cam_config, image in zip(cam_configs, foreground_images):
+                    camera_matrix, dist_coeffs, rotation_vector, translation_vector = cam_config
+                    image_points, _ = cv2.projectPoints(voxel_world, rotation_vector, translation_vector, camera_matrix,
+                                                        dist_coeffs)
+                    pixel = image_points[0][0]
+
+                    if not is_foreground_in_image(pixel, image):
+                        is_foreground = False
+                        break
+
+                if is_foreground:
+                    data.append(position)
+                    colors.append(white_color)
+
+    return data, colors

@@ -119,7 +119,7 @@ def main():
     depth = load_texture_2d('resources/textures/depth.jpg')
     depth_grid = load_texture_2d('resources/textures/depth_grid.jpg')
 
-    grid_positions, grid_colors = generate_grid(config['world_width'], config['world_width'])
+    grid_positions, grid_colors = generate_grid(config['world_width'], config['world_depth'])
     square.set_multiple_positions(grid_positions, grid_colors)
 
     cam_positions, cam_colors = get_cam_positions()
