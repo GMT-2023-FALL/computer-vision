@@ -5,7 +5,7 @@ import glm
 import numpy as np
 
 from executable import main
-from manually_process.utils import get_camera_extrinsic, rotate_voxels
+from manually_process.utils import get_camera_extrinsic, rotate_voxels, get_camera_intrinsic
 from skimage import measure
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
@@ -131,6 +131,78 @@ from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 #     return dataR, colors
 
 
+def save_as_xml():
+    import numpy as np
+    import xml.etree.ElementTree as ET
+
+    for index in range(1, 5):
+        # Load the camera parameters
+        camera_matrix, dist_coeffs = get_camera_intrinsic(index)
+        rvecs, tvecs = get_camera_extrinsic(index)
+        print(camera_matrix)
+        print(dist_coeffs)
+        print(rvecs)
+        print(tvecs)
+        # Create the root element
+        opencv_storage = ET.Element('opencv_storage')
+
+        # Add camera matrix
+        CameraMatrix = ET.SubElement(opencv_storage, 'CameraMatrix', attrib={'type_id': 'opencv-matrix'})
+        ET.SubElement(CameraMatrix, 'rows').text = str(camera_matrix.shape[0])
+        ET.SubElement(CameraMatrix, 'cols').text = str(camera_matrix.shape[1])
+        ET.SubElement(CameraMatrix, 'dt').text = 'f'
+        ET.SubElement(CameraMatrix, 'data').text = ' '.join(map(str, camera_matrix.flatten()))
+
+        # Add distortion coefficients
+        DistortionCoeffs = ET.SubElement(opencv_storage, 'DistortionCoeffs', attrib={'type_id': 'opencv-matrix'})
+        ET.SubElement(DistortionCoeffs, 'rows').text = str(dist_coeffs.shape[0])
+        ET.SubElement(DistortionCoeffs, 'cols').text = '1'
+        ET.SubElement(DistortionCoeffs, 'dt').text = 'f'
+        ET.SubElement(DistortionCoeffs, 'data').text = ' '.join(map(str, dist_coeffs.flatten()))
+
+        # Flatten and add rotation vectors
+        RVecs = ET.SubElement(opencv_storage, 'RVecs', attrib={'type_id': 'opencv-matrix'})
+        ET.SubElement(RVecs, 'rows').text = str(rvecs.shape[0])
+        ET.SubElement(RVecs, 'cols').text = str(rvecs.shape[1])  # Each rotation vector has 3 elements
+        ET.SubElement(RVecs, 'dt').text = 'f'
+        ET.SubElement(RVecs, 'data').text = ' '.join(map(str, np.concatenate(rvecs).flatten()))
+
+        # Flatten and add translation vectors
+        TVecs = ET.SubElement(opencv_storage, 'TVecs', attrib={'type_id': 'opencv-matrix'})
+        ET.SubElement(TVecs, 'rows').text = str(tvecs.shape[0])
+        ET.SubElement(TVecs, 'cols').text = str(tvecs.shape[1])  # Each translation vector has 3 elements
+        ET.SubElement(TVecs, 'dt').text = 'f'
+        ET.SubElement(TVecs, 'data').text = ' '.join(map(str, np.concatenate(tvecs).flatten()))
+
+        # Generate the XML tree and write to file
+        tree = ET.ElementTree(opencv_storage)
+        with open('data/cam{}/config.xml'.format(index), 'wb') as file:
+            tree.write(file, encoding='utf-8', xml_declaration=True)
+    # # Assuming rvecs and tvecs are not needed for this XML, but you can add them similarly
+    #
+    # # Create the root element
+    # opencv_storage = ET.Element('opencv_storage')
+    #
+    # # Add camera matrix
+    # CameraMatrix = ET.SubElement(opencv_storage, 'CameraMatrix', attrib={'type_id': 'opencv-matrix'})
+    # ET.SubElement(CameraMatrix, 'rows').text = str(camera_matrix.shape[0])
+    # ET.SubElement(CameraMatrix, 'cols').text = str(camera_matrix.shape[1])
+    # ET.SubElement(CameraMatrix, 'dt').text = 'f'
+    # ET.SubElement(CameraMatrix, 'data').text = ' '.join(map(str, camera_matrix.flatten()))
+    #
+    # # Add distortion coefficients
+    # DistortionCoeffs = ET.SubElement(opencv_storage, 'DistortionCoeffs', attrib={'type_id': 'opencv-matrix'})
+    # ET.SubElement(DistortionCoeffs, 'rows').text = str(dist_coeffs.shape[0])
+    # ET.SubElement(DistortionCoeffs, 'cols').text = '1'  # Assuming dist_coeffs is a 1D array
+    # ET.SubElement(DistortionCoeffs, 'dt').text = 'f'
+    # ET.SubElement(DistortionCoeffs, 'data').text = ' '.join(map(str, dist_coeffs.flatten()))
+    #
+    # # Generate the XML tree and write to file
+    # tree = ET.ElementTree(opencv_storage)
+    # with open('config.xml', 'wb') as file:
+    #     tree.write(file, encoding='utf-8', xml_declaration=True)
+
+
 def draw_mesh(positions):
     voxel = np.int32(positions)
     width = np.max(voxel[:, 0]) - np.min(voxel[:, 0])
@@ -169,11 +241,12 @@ def draw_mesh(positions):
 
 
 def generate_voxel_map(config):
-    main()
+    # main()
     # read data
     # with open('data_300.pkl', 'rb') as f:
     #     data = pickle.load(f)
     # data = rotate_voxels(data, np.radians(90), 'x')
     #
     # draw_mesh(np.array(data))
+    save_as_xml()
 
