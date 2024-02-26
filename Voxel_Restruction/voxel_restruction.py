@@ -169,11 +169,11 @@ def draw_mesh(positions):
 
 
 def generate_voxel_map(config):
-    # main()
+    main()
     # read data
-    with open('data_300.pkl', 'rb') as f:
-        data = pickle.load(f)
-    data = rotate_voxels(data, np.radians(90), 'x')
-
-    draw_mesh(np.array(data))
+    # with open('data_300.pkl', 'rb') as f:
+    #     data = pickle.load(f)
+    # data = rotate_voxels(data, np.radians(90), 'x')
+    #
+    # draw_mesh(np.array(data))
 
