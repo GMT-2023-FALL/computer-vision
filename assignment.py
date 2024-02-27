@@ -30,7 +30,7 @@ def set_voxel_positions(width, height, depth):
         rotation_vector, translation_vector = get_camera_extrinsic(cam_index)
         cam_configs.append([camera_matrix, dist_coeffs, rotation_vector, translation_vector])
     # Get foreground images
-    foreground_images = [cv2.imread('data/cam{}/video_manual_segment.png'.format(index), cv2.IMREAD_GRAYSCALE) for index
+    foreground_images = [cv2.imread('data/cam{}/foreground.png'.format(index), cv2.IMREAD_GRAYSCALE) for index
                          in range(1, 5)]
     colorful_images = [cv2.imread('data/cam{}/segment/video.jpg'.format(index), cv2.IMREAD_COLOR) for index in
                        range(1, 5)]  # 确保路径正确
