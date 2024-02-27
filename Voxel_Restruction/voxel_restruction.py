@@ -1,14 +1,10 @@
-import pickle
-
-import cv2
-import glm
+import matplotlib.pyplot as plt
 import numpy as np
+from mpl_toolkits.mplot3d.art3d import Poly3DCollection
+from skimage import measure
 
 from executable import main
-from manually_process.utils import get_camera_extrinsic, rotate_voxels, get_camera_intrinsic
-from skimage import measure
-import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d.art3d import Poly3DCollection
+from manually_process.utils import get_camera_extrinsic, get_camera_intrinsic
 
 
 # def get_camera_positions():
@@ -178,29 +174,6 @@ def save_as_xml():
         tree = ET.ElementTree(opencv_storage)
         with open('data/cam{}/config.xml'.format(index), 'wb') as file:
             tree.write(file, encoding='utf-8', xml_declaration=True)
-    # # Assuming rvecs and tvecs are not needed for this XML, but you can add them similarly
-    #
-    # # Create the root element
-    # opencv_storage = ET.Element('opencv_storage')
-    #
-    # # Add camera matrix
-    # CameraMatrix = ET.SubElement(opencv_storage, 'CameraMatrix', attrib={'type_id': 'opencv-matrix'})
-    # ET.SubElement(CameraMatrix, 'rows').text = str(camera_matrix.shape[0])
-    # ET.SubElement(CameraMatrix, 'cols').text = str(camera_matrix.shape[1])
-    # ET.SubElement(CameraMatrix, 'dt').text = 'f'
-    # ET.SubElement(CameraMatrix, 'data').text = ' '.join(map(str, camera_matrix.flatten()))
-    #
-    # # Add distortion coefficients
-    # DistortionCoeffs = ET.SubElement(opencv_storage, 'DistortionCoeffs', attrib={'type_id': 'opencv-matrix'})
-    # ET.SubElement(DistortionCoeffs, 'rows').text = str(dist_coeffs.shape[0])
-    # ET.SubElement(DistortionCoeffs, 'cols').text = '1'  # Assuming dist_coeffs is a 1D array
-    # ET.SubElement(DistortionCoeffs, 'dt').text = 'f'
-    # ET.SubElement(DistortionCoeffs, 'data').text = ' '.join(map(str, dist_coeffs.flatten()))
-    #
-    # # Generate the XML tree and write to file
-    # tree = ET.ElementTree(opencv_storage)
-    # with open('config.xml', 'wb') as file:
-    #     tree.write(file, encoding='utf-8', xml_declaration=True)
 
 
 def draw_mesh(positions):
@@ -241,12 +214,4 @@ def draw_mesh(positions):
 
 
 def generate_voxel_map(config):
-    # main()
-    # read data
-    # with open('data_300.pkl', 'rb') as f:
-    #     data = pickle.load(f)
-    # data = rotate_voxels(data, np.radians(90), 'x')
-    #
-    # draw_mesh(np.array(data))
-    save_as_xml()
-
+    main()
