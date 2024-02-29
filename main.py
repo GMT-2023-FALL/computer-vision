@@ -34,5 +34,6 @@ CONFIG = {
 if __name__ == '__main__':
     # calibrate_camera(config=CONFIG)
     # background_process(config=CONFIG)
-    generate_voxel_map(config=CONFIG)
+    # generate_voxel_map(config=CONFIG)
+    pass
 

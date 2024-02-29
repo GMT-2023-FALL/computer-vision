@@ -125,6 +125,7 @@ def manually_find_corner_points(img_path, config):
     # cv2.imwrite("{}/result_{}".format(config["human_detected_images_folder_path"], file_name),
     #             resized_image)
     cv2.destroyAllWindows()
+    return image_points
 
 
 def save_params(_parameter_file_path, _object_points_list, _image_points_list, _dimension):
@@ -249,6 +250,7 @@ def get_camera_intrinsic(step):
     mtx = np.load('{}/mtx.npy'.format(parameter_file_path))
     dist = np.load('{}/dist.npy'.format(parameter_file_path))
     return mtx, dist
+
 
 
 def get_camera_extrinsic( step):
