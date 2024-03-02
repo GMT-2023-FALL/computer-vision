@@ -79,7 +79,7 @@ def calibrate_camera_from_screenshots(_screenshot_save_path):
 if __name__ == '__main__':
     video_path = "4persons/extrinsics"
     screenshot_save_path = "4persons/screenshots"
-    generate_screenshots(video_path, screenshot_save_path)
+    # generate_screenshots(video_path, screenshot_save_path)
     calibrate_camera_from_screenshots(screenshot_save_path)
 
 

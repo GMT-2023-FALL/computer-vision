@@ -1,4 +1,4 @@
-<h1 align="center">Assignment 2 of Computer Vision👋</h1>
+<h1 align="center">Assignment 3 of Computer Vision👋</h1>
 <p>
   <img alt="Version" src="https://img.shields.io/badge/version-V0.1-blue.svg?cacheSeconds=2592000" />
   <a href="123" target="_blank">
@@ -46,7 +46,7 @@ python main.py
 [//]: # (Xcode&#40;ios&#41;)
 
 # Documentation
-## Intrinsic/Extrinsic parameters
+## Color Modeling
 - **Camera 1**
     ```xml
     <?xml version='1.0' encoding='utf-8'?>
@@ -194,7 +194,7 @@ python main.py
 [//]: # (The left click marks and the right click deletes.)
 
 
-## Background subtraction
+## Voxel space
 ### Auto Thresholds
 First, we manually separate the foreground and background using Photoshop, then set the foreground to white and the background to black. Next, we create a mask through a for loop to calculate the similarity between each mask and the manually separated foreground and background, thereby finding the optimal threshold. Furthermore, after this, we use morphological operations, such as erosion and dilation, on the image to remove some noise.
 
