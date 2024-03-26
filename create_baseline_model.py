@@ -4,6 +4,7 @@ import torch.nn.functional as F
 from torch.nn.init import kaiming_uniform_
 
 from create_dataset import get_train_data_loader, get_validation_data_loader
+from draw_diagram import plot_metrics
 from train_model import train_model, test_model
 
 
@@ -41,7 +42,7 @@ class LeNet5(nn.Module):
         return x
 
 
-def create_baseline_model():
+def create_baseline_model(num_epochs=10):
     # Create the model instance
     model = LeNet5()
 
@@ -58,15 +59,19 @@ def create_baseline_model():
     num_epochs = 10
 
     # 运行训练
-    trained_model = train_model(model, get_train_data_loader(), get_validation_data_loader(), get_baseline_criterion,
+    history, trained_model = train_model(model, get_train_data_loader(), get_validation_data_loader(), get_baseline_criterion(),
                                 optimizer,
                                 num_epochs=num_epochs)
 
+    print(history)
+    plot_metrics(history, "Baseline Model")
     # 评估模型
-    test_model(trained_model, get_validation_data_loader(), get_baseline_criterion)
+    test_model(trained_model, get_validation_data_loader(), get_baseline_criterion())
 
     # 保存模型
     torch.save(trained_model, 'baseline_model.pth')
+
+
 
 
 def get_baseline_criterion():
