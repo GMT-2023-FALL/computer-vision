@@ -162,6 +162,7 @@ def validate_model(model, validation_loader, criterion, device):
 def cm_model(model, test_loader, version):
     model.eval()  # Set the model to evaluation mode
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print("Device: ", device)
     all_preds = []
     all_labels = []
 
@@ -186,6 +187,9 @@ def cm_model(model, test_loader, version):
     if version == 0:
         plt.title('Confusion Matrix for Baseline Model')
         plt.savefig('Confusion Matrix for Baseline Model.png')
+    elif version == -1:
+        plt.title('Confusion Matrix for Custom Model')
+        plt.savefig('Confusion Matrix for Custom Model.png')
     else:
         plt.title('Confusion Matrix for Variant Model {}'.format(version))
         plt.savefig('Confusion Matrix for Variant Model {}.png'.format(version))
